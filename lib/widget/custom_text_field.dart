@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class CustomTextField extends StatelessWidget {
   TextInputType textInputType;
@@ -7,7 +6,8 @@ class CustomTextField extends StatelessWidget {
   TextEditingController textEditingController;
   bool secure;
 
-  CustomTextField({Key? key,
+  CustomTextField({
+    Key? key,
     this.textInputType = TextInputType.text,
     this.secure = false,
     required this.labelText,
@@ -21,32 +21,31 @@ class CustomTextField extends StatelessWidget {
       child: TextField(
         obscureText: secure,
         keyboardType: textInputType,
-
         controller: textEditingController,
         decoration: InputDecoration(
           fillColor: Colors.grey.shade100,
           filled: true,
           labelText: labelText,
-          labelStyle: GoogleFonts.cairo(color: Colors.grey.shade500,),
+          labelStyle: TextStyle(color: Colors.grey.shade500),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(
-                width: 1,
-                color: Colors.black45,
+              width: 1,
+              color: Colors.black45,
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(
-                width: 1,
-                color: Colors.black45,
+              width: 1,
+              color: Colors.black45,
             ),
           ),
           disabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
             borderSide: const BorderSide(
-                width: 1,
-                color: Colors.black45,
+              width: 1,
+              color: Colors.black45,
             ),
           ),
         ),

@@ -1,9 +1,14 @@
-import 'package:doyoon/data/person.dart';
-import 'package:doyoon/screens/user_screen.dart';
+import 'package:doyoon/models/process_response.dart';
+import 'package:doyoon/models/user.dart';
+import 'package:doyoon/provider/orders_provider.dart';
+import 'package:doyoon/provider/products_provider.dart';
+import 'package:doyoon/provider/users_provider.dart';
+import 'package:doyoon/screens/new_order_screen.dart';
+import 'package:doyoon/screens/orders_screen.dart';
 import 'package:doyoon/widget/custom_list_tile.dart';
 import 'package:doyoon/widget/custom_text_field.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -14,28 +19,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late TextEditingController nameController;
-  late TextEditingController quantityController;
-  String? order;
   String? name;
-  int? quantity;
-  List<Person> toDayList = <Person>[
-    Person(title: 'محمد محجوب', subTitle: 22),
-    Person(title: 'نعيم مطر', subTitle: 10),
-    Person(title: 'ابراهيم قويدر', subTitle: 5),
-    Person(title: 'رمضان شامية', subTitle: 2),
-  ];
 
   @override
   void initState() {
     super.initState();
+    Provider.of<UsersProvider>(context, listen: false).read();
+    Provider.of<ProductsProvider>(context, listen: false).read();
     nameController = TextEditingController();
-    quantityController = TextEditingController();
   }
 
   @override
   void dispose() {
     nameController.dispose();
-    quantityController.dispose();
     super.dispose();
   }
 
@@ -43,154 +39,163 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'العقيد',
-          style: GoogleFonts.cairo(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.search),
-        ),
+        title: const Text('الزبائن'),
         actions: [
           IconButton(
-            onPressed: () {
-              setState(() {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
+              onPressed: () {
+                nameController.clear();
+                _showDialog(context);
+              },
+              icon: const Icon(Icons.person_add_alt_1_outlined))
+        ],
+      ),
+      body: Consumer<UsersProvider>(
+        builder: (context, UsersProvider value, child) {
+          if (value.users.isNotEmpty) {
+            return ListView.builder(
+              itemCount: value.users.length,
+              itemBuilder: (context, index) {
+                return CustomListTile(
+                  title: value.users[index].name,
+                  supTitle: '---تفاصيل---',
+                  onTap: () async {
+                    await Provider.of<OrdersProvider>(context, listen: false)
+                        .read(value.users[index].id);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrdersScreen(
+                          userId: value.users[index].id,
+                          name: value.users[index].name,
+                        ),
+                      ),
+                    );
+                  },
+                  trailingOnPress: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NewOrderScreen(
+                              name: value.users[index].name,
+                              userId: value.users[index].id),
+                        ));
+                  },
+                );
+              },
+            );
+          } else {
+            return const Center(
+              child: Text('لا يوجد بيانات'),
+            );
+          }
+        },
+      ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            const UserAccountsDrawerHeader(
+              currentAccountPicture: CircleAvatar(
+                backgroundImage: AssetImage('images/logo.png'),
+              ),
+              accountName: Text(
+                'العقيد',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              accountEmail: Text(
+                'العقيد أبو رمضان',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            ListTile(
+              onTap: () {
+                Navigator.pushNamed(context, '/add_product_screen');
+              },
+              title: const Text(
+                'إضافة منتج جديد',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDialog(BuildContext context) async {
+    showDialog(
+        context: context,
+        builder: (_) {
+          return Consumer<ProductsProvider>(
+              builder: (context, ProductsProvider value, child) {
+            return ChangeNotifierProvider<UsersProvider>(
+              create: (context) => UsersProvider(),
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return AlertDialog(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    content: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'إضافة زبون',
-                          style: GoogleFonts.cairo(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
-                        CustomTextField(
-                          labelText: 'الاسم',
-                          textEditingController: nameController,
-                          textInputType: TextInputType.text,
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        CustomTextField(
-                          labelText: 'الكمية',
-                          textEditingController: quantityController,
-                          textInputType: TextInputType.number,
-                        ),
-                        const SizedBox(
-                          width: 20,
-                        ),
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RadioListTile(
-                              title: const Text('شاي'),
-                              value: 'شاي',
-                              groupValue: order,
-                              onChanged: (value) {
-                                setState(() {
-                                  order = value.toString();
-                                });
-                              },
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'إضافة زبون',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
-                            RadioListTile(
-                              title: const Text('قهوة'),
-                              value: 'قهوة',
-                              groupValue: order,
-                              onChanged: (value) {
-                                setState(() {
-                                  order = value.toString();
-                                });
-                              },
-                            ),
-                            RadioListTile(
-                              title: const Text('نسكافيه'),
-                              value: 'نسكافيه',
-                              groupValue: order,
-                              onChanged: (value) {
-                                setState(() {
-                                  order = value.toString();
-                                });
-                              },
-                            )
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              // TODO: read from database
-                              nameController.text.isNotEmpty
-                                  ? name = nameController.text
-                                  : name = 'تجربة';
-                              quantityController.text.isNotEmpty
-                                  ? quantity =
-                                      int.parse(quantityController.text)
-                                  : quantity = 0;
-                              toDayList.add(
-                                  Person(title: name!, subTitle: quantity!));
-                              Navigator.of(context).pop();
-                            });
-                          },
-                          child: Text(
-                            'حفظ',
-                            style: GoogleFonts.cairo(),
                           ),
-                        ),
-                      ],
+                          CustomTextField(
+                            labelText: 'الاسم',
+                            textEditingController: nameController,
+                            textInputType: TextInputType.text,
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                nameController.text.isNotEmpty
+                                    ? name = nameController.text
+                                    : name = 'تجربة';
+                                save();
+                                Navigator.of(context).pop();
+                              });
+                            },
+                            child: const Text('حفظ'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-                nameController.clear();
-                quantityController.clear();
-              });
-            },
-            icon: const Icon(Icons.person_add_outlined),
-          ),
-          PopupMenuButton(
-            itemBuilder: (context) => [],
-            icon: const Icon(Icons.menu),
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: toDayList.length,
-        itemBuilder: (context, index) {
-          return CustomListTile(
-            title: toDayList[index].title,
-            supTitle: toDayList[index].subTitle.toString(),
-            leadingOnPress: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      UserScreen(title: toDayList[index].title),
-                ),
-              );
-            },
-            trailingOnPress: () {
-              setState(() {
-                toDayList[index].subTitle != 0
-                    ? toDayList[index].subTitle--
-                    : toDayList.removeAt(index);
-              });
-            },
-          );
-        },
-      ),
-    );
+                  );
+                },
+              ),
+            );
+          });
+        });
+  }
+
+  Future<void> save() async {
+    ProcessResponse pr =
+        await Provider.of<UsersProvider>(context, listen: false).create(user);
+  }
+
+  User get user {
+    User u = User();
+    u.name = nameController.text;
+    u.total = 0;
+    return u;
   }
 }
